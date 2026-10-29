@@ -2,6 +2,8 @@
 
 A responsive ASP.NET Core (.NET 9) web app for logging working hours and producing formal timesheets.
 
+> **Built with [Claude Code](https://claude.com/claude-code).** The code in this repository was written using Claude Code, Anthropic's AI coding assistant, working from requirements by Muhammad Kazim.
+
 ## Features
 
 - Log time with date, start/end, break, project/task and notes (hours are calculated like the Excel timesheet)
