@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Working Hours Log</title>
+    <link rel="stylesheet" href="css/site.css" />
+</head>
+<body>
+    <header class="topbar">
+        <div>
+            <h1>⏱ Working Hours Log</h1>
+            <div class="subtitle" id="headerName"></div>
+        </div>
+        <div class="topbar-actions">
+            <label class="btn btn-ghost" for="importFile">Import Excel</label>
+            <input type="file" id="importFile" accept=".xlsx" hidden />
+            <a class="btn btn-ghost" id="exportPdfLink" href="/api/entries/export?format=pdf" download>Export PDF</a>
+            <a class="btn btn-ghost" id="exportLink" href="/api/entries/export" download>Export CSV</a>
+            <button class="btn btn-ghost" type="button" id="shareBtn">Share</button>
+            <button class="btn btn-ghost" type="button" id="settingsBtn" aria-label="Settings">⚙ Settings</button>
+        </div>
+    </header>
+
+    <main class="layout">
+        <p class="banner" id="banner" hidden></p>
+
+        <section class="card timer-card">
+            <div>
+                <div class="label">Timer</div>
+                <div class="timer-display" id="timerDisplay">00:00:00</div>
+                <div class="timer-hint" id="timerHint">Start when you begin work. Stop fills in the date, start and end.</div>
+            </div>
+            <button class="btn btn-primary" id="timerBtn" type="button">Start</button>
+        </section>
+
+        <section class="card">
+            <h2 id="formTitle">Log time</h2>
+            <form id="entryForm" novalidate>
+                <div class="grid">
+                    <label>Date
+                        <input type="date" id="date" required />
+                    </label>
+                    <label>Start
+                        <input type="time" id="start" />
+                    </label>
+                    <label>End
+                        <input type="time" id="end" />
+                    </label>
+                    <label>Break (min)
+                        <input type="number" id="breakMin" min="0" step="5" value="0" inputmode="numeric" />
+                    </label>
+                    <label>Hours worked
+                        <input type="text" id="duration" placeholder="e.g. 1:30" />
+                    </label>
+                    <label class="span-all">Project / Task
+                        <input type="text" id="task" list="taskList" placeholder="e.g. Progress meeting with client" required />
+                        <datalist id="taskList"></datalist>
+                    </label>
+                    <label class="span-all">Notes
+                        <textarea id="notes" rows="2" placeholder="Optional details"></textarea>
+                    </label>
+                </div>
+                <p class="error" id="formError" hidden></p>
+                <div class="actions">
+                    <button class="btn btn-primary" type="submit" id="saveBtn">Add entry</button>
+                    <button class="btn btn-ghost" type="button" id="cancelEdit" hidden>Cancel</button>
+                </div>
+            </form>
+        </section>
+
+        <section class="card">
+            <div class="list-header">
+                <h2>Timesheet</h2>
+                <div class="tabs" id="periodTabs">
+                    <button type="button" data-period="month">This month</button>
+                    <button type="button" data-period="lastMonth">Last month</button>
+                    <button type="button" data-period="all" class="active">All</button>
+                </div>
+            </div>
+            <div class="range">
+                <label>From <input type="date" id="fromDate" /></label>
+                <label>To <input type="date" id="toDate" /></label>
+            </div>
+
+            <div class="stats" id="stats"></div>
+
+            <div class="selection-bar" id="selectionBar">
+                <label class="check-label">
+                    <input type="checkbox" id="selectAll" />
+                    Select all
+                </label>
+                <span class="selection-count" id="selectionCount"></span>
+                <div class="sort-mobile">
+                    <label for="sortSelect">Sort</label>
+                    <select id="sortSelect">
+                        <option value="date">Date</option>
+                        <option value="day">Day of week</option>
+                        <option value="start">Start time</option>
+                        <option value="end">End time</option>
+                        <option value="break">Break</option>
+                        <option value="hours">Hours</option>
+                        <option value="task">Project / Task</option>
+                        <option value="notes">Notes</option>
+                    </select>
+                    <button type="button" class="btn btn-ghost btn-sm" id="sortDir" aria-label="Reverse sort order">↑</button>
+                </div>
+                <div class="selection-actions">
+                    <button class="btn btn-ghost btn-sm" type="button" id="editSelected" disabled title="Select exactly one record to edit">Edit</button>
+                    <button class="btn btn-danger btn-sm" type="button" id="deleteSelected" disabled>Delete selected</button>
+                </div>
+            </div>
+
+            <div class="table-wrap">
+                <table class="sheet">
+                    <thead>
+                        <tr>
+                            <th class="c-check"><span class="visually-hidden">Select</span></th>
+                            <th data-sort="date"><button type="button" class="sort-btn">Date</button></th>
+                            <th data-sort="day"><button type="button" class="sort-btn">Day</button></th>
+                            <th data-sort="start"><button type="button" class="sort-btn">Start</button></th>
+                            <th data-sort="end"><button type="button" class="sort-btn">End</button></th>
+                            <th data-sort="break" class="num"><button type="button" class="sort-btn">Break</button></th>
+                            <th data-sort="hours" class="num"><button type="button" class="sort-btn">Hours</button></th>
+                            <th class="num">Overtime</th>
+                            <th data-sort="task"><button type="button" class="sort-btn">Project / Task</button></th>
+                            <th data-sort="notes"><button type="button" class="sort-btn">Notes</button></th>
+                            <th><span class="visually-hidden">Actions</span></th>
+                        </tr>
+                    </thead>
+                    <tbody id="entries"></tbody>
+                </table>
+            </div>
+            <p class="empty" id="emptyState" hidden>No time logged for this period yet.</p>
+
+            <div class="danger-row">
+                <button class="btn btn-danger-ghost" type="button" id="deleteAllBtn">Delete all records…</button>
+            </div>
+        </section>
+    </main>
+
+    <dialog id="settingsDialog" class="dialog-wide">
+        <form method="dialog" id="settingsForm">
+            <h2>Timesheet settings</h2>
+            <p class="muted">These details appear on the exported PDF and CSV.</p>
+
+            <fieldset>
+                <legend>Your details</legend>
+                <div class="logo-row">
+                    <div class="logo-preview" id="logoPreview"><span>No logo</span></div>
+                    <div class="logo-actions">
+                        <label class="btn btn-ghost btn-sm" for="logoFile">Upload logo</label>
+                        <input type="file" id="logoFile" accept="image/png,image/jpeg" hidden />
+                        <button class="btn btn-ghost btn-sm" type="button" id="logoRemove" hidden>Remove</button>
+                        <span class="muted small">PNG or JPG, up to 2 MB</span>
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <label>Name <input type="text" id="setName" /></label>
+                    <label>Job title <input type="text" id="setJobTitle" placeholder="e.g. IT Consultant" /></label>
+                    <label>Company <input type="text" id="setCompany" placeholder="Optional" /></label>
+                    <label>Email <input type="email" id="setEmail" /></label>
+                    <label>Phone <input type="tel" id="setPhone" /></label>
+                    <label class="span-all">Address <textarea id="setAddress" rows="2"></textarea></label>
+                </div>
+            </fieldset>
+
+            <fieldset>
+                <legend>Client (bill to)</legend>
+                <div class="form-grid">
+                    <label>Client name <input type="text" id="setClientName" placeholder="e.g. Jane Smith" /></label>
+                    <label>Client company <input type="text" id="setClientCompany" /></label>
+                    <label>Client email <input type="email" id="setClientEmail" /></label>
+                    <label class="span-all">Client address <textarea id="setClientAddress" rows="2"></textarea></label>
+                </div>
+            </fieldset>
+
+            <fieldset>
+                <legend>Rates &amp; tax</legend>
+                <div class="form-grid">
+                    <label>Standard hours per day <input type="number" id="setStd" min="0.5" max="24" step="0.5" /></label>
+                    <label>Hourly rate <input type="number" id="setRate" min="0" step="0.01" placeholder="Optional" /></label>
+                    <label>Currency <input type="text" id="setCurrency" placeholder="e.g. USD" maxlength="8" /></label>
+                    <label>Tax name <input type="text" id="setTaxLabel" placeholder="VAT" maxlength="20" /></label>
+                    <label>Tax % <input type="number" id="setTax" min="0" max="100" step="0.01" placeholder="e.g. 5, or leave empty" /></label>
+                </div>
+            </fieldset>
+
+            <fieldset>
+                <legend>Document</legend>
+                <div class="form-grid">
+                    <label class="span-all">Title <input type="text" id="setTitle" placeholder="Timesheet" /></label>
+                    <label class="span-all">Payment details <textarea id="setPayment" rows="3" placeholder="e.g. Bank, account name, IBAN, payment terms"></textarea></label>
+                    <label class="span-all">Notes <textarea id="setNotes" rows="2" placeholder="e.g. Thank you for your business."></textarea></label>
+                </div>
+            </fieldset>
+
+            <p class="error" id="settingsError" hidden></p>
+            <div class="actions sticky-actions">
+                <button class="btn btn-primary" type="submit" value="save">Save</button>
+                <button class="btn btn-ghost" type="button" id="settingsCancel">Cancel</button>
+                <a class="btn btn-ghost push-right" id="previewPdf" href="/api/entries/export?format=pdf" target="_blank">Preview PDF</a>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog id="deleteAllDialog">
+        <form id="deleteAllForm">
+            <h2>Delete all records?</h2>
+            <p>This permanently removes <strong id="deleteAllCount">all</strong> from the timesheet, across every date, not just the period shown. Your settings are kept.</p>
+            <p class="muted">Tip: export a <a href="/api/entries/export?format=pdf" download>PDF</a> or <a href="/api/entries/export" download>CSV</a> first if you might need them later.</p>
+            <label><span>Type <strong class="phrase">DELETE ALL</strong> to confirm</span>
+                <input type="text" id="deleteAllInput" autocomplete="off" spellcheck="false" />
+            </label>
+            <p class="error" id="deleteAllError" hidden></p>
+            <div class="actions">
+                <button class="btn btn-danger" type="submit" id="deleteAllConfirm" disabled>Delete all records</button>
+                <button class="btn btn-ghost" type="button" id="deleteAllCancel">Cancel</button>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog id="shareDialog">
+        <div class="share-body">
+            <h2>Share timesheet</h2>
+            <div class="tabs format-tabs" id="shareFormat" role="radiogroup" aria-label="File format">
+                <button type="button" data-format="pdf" class="active">PDF</button>
+                <button type="button" data-format="csv">CSV</button>
+            </div>
+            <pre class="share-preview" id="sharePreview"></pre>
+
+            <div id="shareNative" hidden>
+                <button class="btn btn-primary share-wide" type="button" id="shareNativeBtn">Share file…</button>
+                <p class="muted">Opens your device's share menu. Pick WhatsApp, Mail, Outlook or another app, and the file is attached.</p>
+                <div class="divider"><span>or</span></div>
+            </div>
+
+            <label>WhatsApp number (optional)
+                <input type="tel" id="shareWaNumber" placeholder="e.g. 971501234567, with country code" autocomplete="tel" />
+            </label>
+            <button class="btn btn-whatsapp share-wide" type="button" id="shareWhatsApp">Send via WhatsApp</button>
+
+            <label>Email to (optional)
+                <input type="email" id="shareEmailTo" placeholder="name@example.com" autocomplete="email" />
+            </label>
+            <button class="btn btn-ghost share-wide" type="button" id="shareEmail">Send via email</button>
+
+            <p class="muted" id="shareNote">The CSV file downloads first. WhatsApp and email links can't attach files themselves, so attach the downloaded file before you send.</p>
+            <p class="error" id="shareError" hidden></p>
+
+            <div class="actions">
+                <button class="btn btn-ghost" type="button" id="shareClose">Close</button>
+            </div>
+        </div>
+    </dialog>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
