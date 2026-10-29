@@ -214,6 +214,26 @@ input[readonly] { color: var(--muted); }
 
 .mobile-only { display: none; }
 
+/* "…" / "less" toggle on long notes */
+.notes-toggle {
+    font: inherit;
+    font-weight: 600;
+    background: var(--chip);
+    color: var(--primary);
+    border: 0;
+    border-radius: 6px;
+    padding: 0 6px;
+    margin-left: 2px;
+    line-height: 1.4;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.notes-toggle:hover { text-decoration: underline; }
+.notes-toggle:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+@media (pointer: coarse), (max-width: 640px) {
+    .notes-toggle { padding: 4px 12px; margin-left: 4px; } /* bigger tap target on phones */
+}
+
 /* ---------- Selection ---------- */
 
 .selection-bar {

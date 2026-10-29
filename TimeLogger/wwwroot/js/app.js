@@ -293,6 +293,20 @@ document.querySelector(".sheet thead").addEventListener("click", (ev) => {
 $("sortSelect").addEventListener("change", () => setSort($("sortSelect").value, sort.dir));
 $("sortDir").addEventListener("click", () => setSort(sort.key, sort.dir === "asc" ? "desc" : "asc"));
 
+// ---------- Long notes: show the first 100 characters, click "…" to expand ----------
+
+const NOTES_PREVIEW = 100;
+const expandedNotes = new Set(); // ids whose notes are shown in full
+
+function notesHtml(e) {
+    const chars = [...(e.notes || "")]; // by character, so emoji aren't cut in half
+    if (chars.length <= NOTES_PREVIEW) return escapeHtml(e.notes || "");
+    const open = expandedNotes.has(e.id);
+    const text = open ? e.notes : chars.slice(0, NOTES_PREVIEW).join("").trimEnd();
+    return `${escapeHtml(text)}${open ? " " : ""}<button type="button" class="notes-toggle" data-notes="${e.id}" ` +
+        `aria-expanded="${open}" title="${open ? "Show less" : "Show the full note"}">${open ? "less" : "…"}</button>`;
+}
+
 function render() {
     const standard = (settings.standardHoursPerDay || 8) * 60;
 
@@ -324,7 +338,7 @@ function render() {
             <td class="c-hours num">${hours(e.minutes)}</td>
             <td class="c-overtime num ${overtime ? "overtime" : ""}">${overtime ? `+${hours(overtime)}<span class="mobile-only"> overtime</span>` : ""}</td>
             <td class="task">${escapeHtml(e.task)}</td>
-            <td class="notes">${escapeHtml(e.notes || "")}</td>
+            <td class="notes">${notesHtml(e)}</td>
             <td class="c-actions">
                 <div class="row-actions">
                     <button type="button" data-edit="${e.id}">Edit</button>
@@ -452,6 +466,16 @@ $("cancelEdit").addEventListener("click", () => {
 });
 
 $("entries").addEventListener("click", async (ev) => {
+    const notesId = ev.target.dataset.notes;
+    if (notesId) {
+        // Redraw just this cell and keep keyboard focus on the toggle.
+        if (expandedNotes.has(notesId)) expandedNotes.delete(notesId);
+        else expandedNotes.add(notesId);
+        const cell = ev.target.closest("td");
+        cell.innerHTML = notesHtml(entries.find((x) => x.id === notesId));
+        cell.querySelector(".notes-toggle").focus();
+        return;
+    }
     const editId = ev.target.dataset.edit;
     const deleteId = ev.target.dataset.delete;
     if (editId) startEdit(editId);
