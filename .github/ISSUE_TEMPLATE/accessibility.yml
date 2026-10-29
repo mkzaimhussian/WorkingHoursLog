@@ -1,0 +1,36 @@
+name: Accessibility barrier
+description: Something stops you from using the app with a keyboard, screen reader, zoom or other assistive technology
+title: "[Accessibility]: "
+labels: ["accessibility"]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for helping make the app usable for everyone. Accessibility problems are treated as bugs and prioritised.
+  - type: textarea
+    id: task
+    attributes:
+      label: What were you trying to do?
+      placeholder: Add a time entry using only the keyboard
+    validations:
+      required: true
+  - type: textarea
+    id: barrier
+    attributes:
+      label: What happened instead?
+      placeholder: After saving, focus jumped to the top of the page and I couldn't tell whether the entry was added.
+    validations:
+      required: true
+  - type: input
+    id: assistive-tech
+    attributes:
+      label: Assistive technology
+      placeholder: e.g. NVDA 2026.3, VoiceOver, TalkBack, 200% zoom, keyboard only
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Browser and device
+      placeholder: e.g. Firefox 132 on Windows 11
+    validations:
+      required: true

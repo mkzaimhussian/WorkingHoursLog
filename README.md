@@ -30,6 +30,16 @@ Then open http://localhost:5028.
 
 Entries, settings and the logo are stored locally in `TimeLogger/App_Data/`, which is excluded from Git so personal data stays off GitHub.
 
-## Licences
+## Contributing
+
+Bug reports, ideas and pull requests are welcome. Please read the [Contributing guide](CONTRIBUTING.md) and follow the [Code of Conduct](CODE_OF_CONDUCT.md).
+
+- Found a bug or have an idea? [Open an issue](https://github.com/mkzaimhussian/WorkingHoursLog/issues/new/choose).
+- Found a security problem? Please report it privately; see the [Security Policy](SECURITY.md).
+- Hit an accessibility barrier? See the [Accessibility statement](ACCESSIBILITY.md).
+
+## License
+
+This project is licensed under the [MIT License](LICENSE). © 2026 Muhammad Kazim.
 
 PDF export uses [QuestPDF](https://www.questpdf.com/) under its Community licence (free for individuals and businesses under USD 1M annual revenue).

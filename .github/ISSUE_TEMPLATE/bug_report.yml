@@ -1,0 +1,62 @@
+name: Bug report
+description: Something isn't working as expected
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug!
+        **Please don't include real timesheet data, client names, rates or payment details.** Use made-up examples instead.
+        Security problems should be reported privately; see the Security Policy.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the problem.
+      placeholder: When I export to PDF with a date filter set, the total hours are…
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Go to …
+        2. Click …
+        3. See …
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which part of the app?
+      options:
+        - Logging time / timer
+        - Timesheet list (filter, sort, select, edit, delete)
+        - Excel import
+        - PDF export
+        - CSV export
+        - Share (WhatsApp / email)
+        - Settings / logo
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Browser and device
+      placeholder: e.g. Edge 130 on Windows 10, Safari on iPhone 15
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Screenshots, error messages or logs
+      description: Optional. Paste errors from the browser console or from Visual Studio's output, and blur any personal data in screenshots.
