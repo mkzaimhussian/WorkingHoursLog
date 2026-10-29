@@ -232,6 +232,60 @@ input[readonly] { color: var(--muted); }
 .btn-sm { padding: 6px 12px; font-size: .85rem; }
 .btn:disabled { opacity: .45; cursor: not-allowed; }
 
+/* ---------- Pagination ---------- */
+
+.pager {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px 16px;
+    margin-top: 12px;
+    font-size: .88rem;
+    color: var(--muted);
+}
+.pager-pages { display: flex; flex-wrap: wrap; gap: 4px; }
+.pager-pages button {
+    font: inherit;
+    min-width: 34px;
+    height: 34px;
+    padding: 0 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+}
+.pager-pages button:hover:not(:disabled) { background: var(--bg); }
+.pager-pages button[aria-current="page"] { background: var(--primary); border-color: var(--primary); color: var(--primary-text); font-weight: 600; }
+.pager-pages button:disabled { opacity: .4; cursor: not-allowed; }
+.pager-pages .gap { align-self: center; padding: 0 2px; }
+.pager-size { display: flex; align-items: center; gap: 6px; }
+.pager-size label { display: inline; }
+.pager-size select {
+    font: inherit;
+    padding: 5px 8px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text);
+}
+@media (max-width: 640px) {
+    .pager { justify-content: center; }
+    .pager-info { width: 100%; text-align: center; }
+}
+
+.link-btn {
+    font: inherit;
+    font-size: .88rem;
+    background: none;
+    border: 0;
+    padding: 0;
+    color: var(--primary);
+    text-decoration: underline;
+    cursor: pointer;
+}
+
 /* ---------- Sorting ---------- */
 
 .sort-btn {

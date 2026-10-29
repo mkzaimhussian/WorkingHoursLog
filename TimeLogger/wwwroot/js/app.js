@@ -188,8 +188,74 @@ let sort = (() => {
 function setSort(key, dir) {
     sort = { key, dir };
     try { localStorage.setItem(SORT_KEY, JSON.stringify(sort)); } catch { /* storage unavailable */ }
+    page = 1;
     render();
 }
+
+// ---------- Pagination (client-side: the whole period is already loaded) ----------
+
+const PAGE_SIZE_KEY = "timelogger.pageSize";
+const PAGE_SIZES = [10, 25, 50, 100, 0]; // 0 = all rows
+
+let page = 1;
+let pageSize = (() => {
+    try {
+        const saved = Number(localStorage.getItem(PAGE_SIZE_KEY));
+        if (PAGE_SIZES.includes(saved) && localStorage.getItem(PAGE_SIZE_KEY) !== null) return saved;
+    } catch { /* ignore */ }
+    return 10;
+})();
+let pageIds = []; // ids of the rows on the current page
+
+function pageCount(total) {
+    return pageSize === 0 ? 1 : Math.max(1, Math.ceil(total / pageSize));
+}
+
+/** The rows for the current page; also clamps the page number if rows were removed. */
+function pageRows(rows) {
+    page = Math.min(Math.max(1, page), pageCount(rows.length));
+    return pageSize === 0 ? rows : rows.slice((page - 1) * pageSize, page * pageSize);
+}
+
+// Page buttons: first, last, current ±1, with "…" for gaps, e.g. ‹ 1 … 4 5 6 … 12 ›
+function pageButtons(count) {
+    const wanted = new Set([1, count, page - 1, page, page + 1].filter((p) => p >= 1 && p <= count));
+    const list = [...wanted].sort((a, b) => a - b);
+    const parts = [];
+    list.forEach((p, i) => {
+        if (i > 0 && p - list[i - 1] > 1) parts.push(`<span class="gap" aria-hidden="true">…</span>`);
+        parts.push(`<button type="button" data-page="${p}" ${p === page ? 'aria-current="page"' : ""} aria-label="Page ${p}">${p}</button>`);
+    });
+    return parts.join("");
+}
+
+function renderPager(total) {
+    const count = pageCount(total);
+    $("pager").hidden = total === 0;
+    $("pageSize").value = String(pageSize);
+    const first = pageSize === 0 ? 1 : (page - 1) * pageSize + 1;
+    const last = pageSize === 0 ? total : Math.min(page * pageSize, total);
+    $("pagerInfo").textContent = `Showing ${first}–${last} of ${total} ${total === 1 ? "record" : "records"}`;
+    $("pagerPages").innerHTML = count <= 1 ? "" :
+        `<button type="button" data-page="${page - 1}" ${page === 1 ? "disabled" : ""} aria-label="Previous page">‹</button>` +
+        pageButtons(count) +
+        `<button type="button" data-page="${page + 1}" ${page === count ? "disabled" : ""} aria-label="Next page">›</button>`;
+}
+
+$("pagerPages").addEventListener("click", (ev) => {
+    const btn = ev.target.closest("button[data-page]");
+    if (!btn || btn.disabled) return;
+    page = Number(btn.dataset.page);
+    render();
+    document.querySelector(".selection-bar").scrollIntoView({ block: "nearest", behavior: "smooth" });
+});
+
+$("pageSize").addEventListener("change", () => {
+    pageSize = Number($("pageSize").value);
+    try { localStorage.setItem(PAGE_SIZE_KEY, String(pageSize)); } catch { /* storage unavailable */ }
+    page = 1;
+    render();
+});
 
 function compare(a, b) {
     if (typeof a === "string") return a.localeCompare(b, undefined, { sensitivity: "base", numeric: true });
@@ -240,7 +306,10 @@ function render() {
 
     // Overtime placement above uses date order; the rows themselves follow the chosen sort.
     updateSortUi();
-    $("entries").innerHTML = sortedEntries().map((e) => {
+    const rows = pageRows(sortedEntries());
+    pageIds = rows.map((e) => e.id);
+    renderPager(entries.length);
+    $("entries").innerHTML = rows.map((e) => {
         const overtime = lastOfDay[e.date] === e.id ? Math.max(0, dayTotals[e.date] - standard) : 0;
         const times = e.start ? `${hm(e.start)}<span class="mobile-only">–${hm(e.end)}${e.breakMinutes ? ` · ${e.breakMinutes} min break` : ""}</span>` : "";
         const rowClass = [selected.has(e.id) && "is-selected", editingId === e.id && "is-editing"].filter(Boolean).join(" ");
@@ -395,12 +464,31 @@ $("entries").addEventListener("click", async (ev) => {
 
 // ---------- Selecting several records ----------
 
+// "Select all" works on the current page; ticks on other pages are kept and counted,
+// so it's always clear what "Delete selected" will remove.
 function updateSelectionUi() {
     const n = selected.size;
+    const onPage = pageIds.filter((id) => selected.has(id)).length;
+    const elsewhere = n - onPage;
     $("selectionBar").hidden = entries.length === 0;
-    $("selectionCount").textContent = n ? `${n} selected` : "";
-    $("selectAll").checked = n > 0 && n === entries.length;
-    $("selectAll").indeterminate = n > 0 && n < entries.length;
+    $("selectionCount").textContent = !n ? "" :
+        elsewhere ? `${n} selected (${elsewhere} on other pages)` : `${n} selected`;
+    $("selectAll").checked = pageIds.length > 0 && onPage === pageIds.length;
+    $("selectAll").indeterminate = onPage > 0 && onPage < pageIds.length;
+
+    // Offer to extend a full-page selection to the whole period, or to clear a big one.
+    const everything = $("selectEverything");
+    if (n === entries.length && entries.length > pageIds.length) {
+        everything.textContent = "Clear selection";
+        everything.dataset.action = "clear";
+        everything.hidden = false;
+    } else if (pageIds.length && onPage === pageIds.length && entries.length > pageIds.length) {
+        everything.textContent = `Select all ${entries.length} records`;
+        everything.dataset.action = "all";
+        everything.hidden = false;
+    } else {
+        everything.hidden = true;
+    }
     $("editSelected").disabled = n !== 1;
     $("editSelected").title = n === 1 ? "Edit the selected record" : "Select exactly one record to edit";
     $("deleteSelected").disabled = n === 0;
@@ -417,8 +505,14 @@ $("entries").addEventListener("change", (ev) => {
 });
 
 $("selectAll").addEventListener("change", () => {
-    selected.clear();
-    if ($("selectAll").checked) entries.forEach((e) => selected.add(e.id));
+    if ($("selectAll").checked) pageIds.forEach((id) => selected.add(id));
+    else pageIds.forEach((id) => selected.delete(id));
+    render();
+});
+
+$("selectEverything").addEventListener("click", () => {
+    if ($("selectEverything").dataset.action === "all") entries.forEach((e) => selected.add(e.id));
+    else selected.clear();
     render();
 });
 
@@ -449,6 +543,7 @@ function setPreset(p) {
     $("fromDate").value = r.from;
     $("toDate").value = r.to;
     document.querySelectorAll("#periodTabs button").forEach((b) => b.classList.toggle("active", b.dataset.period === p));
+    page = 1;
     loadEntries();
 }
 
@@ -458,6 +553,7 @@ $("periodTabs").addEventListener("click", (ev) => {
 
 ["fromDate", "toDate"].forEach((id) => $(id).addEventListener("change", () => {
     document.querySelectorAll("#periodTabs button").forEach((b) => b.classList.remove("active"));
+    page = 1;
     loadEntries();
 }));
 

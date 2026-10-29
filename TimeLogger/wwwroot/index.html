@@ -91,6 +91,7 @@
                     Select all
                 </label>
                 <span class="selection-count" id="selectionCount"></span>
+                <button type="button" class="link-btn" id="selectEverything" hidden></button>
                 <div class="sort-mobile">
                     <label for="sortSelect">Sort</label>
                     <select id="sortSelect">
@@ -131,6 +132,20 @@
                     <tbody id="entries"></tbody>
                 </table>
             </div>
+            <nav class="pager" id="pager" aria-label="Timesheet pages" hidden>
+                <div class="pager-info" id="pagerInfo" aria-live="polite"></div>
+                <div class="pager-pages" id="pagerPages"></div>
+                <div class="pager-size">
+                    <label for="pageSize">Rows per page</label>
+                    <select id="pageSize">
+                        <option value="10">10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                        <option value="0">All</option>
+                    </select>
+                </div>
+            </nav>
             <p class="empty" id="emptyState" hidden>No time logged for this period yet.</p>
 
             <div class="danger-row">
